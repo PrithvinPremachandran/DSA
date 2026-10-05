@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assessments — AlgoForge</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="nav-mount"></div>
+
+<div class="wrap section">
+
+  <div id="levelSelectScreen">
+    <div class="section-head center" style="margin-left:auto;margin-right:auto;">
+      <div class="eyebrow" style="justify-content:center;">ASSESSMENT</div>
+      <h2>Pick a level to certify.</h2>
+      <p>Ten questions per level, covering the patterns from every module up to that difficulty. Your best score per level is saved to your dashboard.</p>
+    </div>
+    <div class="grid level-select-grid">
+      <div class="card level-card" data-level="beginner">
+        <div class="level-icon" style="background:var(--green-10);color:var(--green);">B</div>
+        <h3>Beginner</h3>
+        <p class="small-muted">Core definitions, Big-O basics, and how each structure behaves.</p>
+        <button class="btn btn-primary btn-block startQuizBtn" data-level="beginner">Start assessment</button>
+      </div>
+      <div class="card level-card" data-level="intermediate">
+        <div class="level-icon" style="background:var(--blue-10);color:var(--blue);">I</div>
+        <h3>Intermediate</h3>
+        <p class="small-muted">Pattern recognition &mdash; sliding window, BFS/DFS, DP recurrences.</p>
+        <button class="btn btn-primary btn-block startQuizBtn" data-level="intermediate">Start assessment</button>
+      </div>
+      <div class="card level-card" data-level="expert">
+        <div class="level-icon" style="background:var(--amber-10);color:var(--amber);">E</div>
+        <h3>Expert</h3>
+        <p class="small-muted">Trade-offs, amortized analysis, and optimization follow-ups.</p>
+        <button class="btn btn-primary btn-block startQuizBtn" data-level="expert">Start assessment</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="quizScreen" style="display:none;max-width:640px;margin:0 auto;">
+    <div class="quiz-q-count" id="quizCount"></div>
+    <div class="quiz-progress"><span id="quizProgressBar"></span></div>
+    <div class="quiz-question card">
+      <h3 id="quizQuestionText"></h3>
+      <div id="quizOptions"></div>
+    </div>
+    <div class="quiz-nav">
+      <button class="btn btn-ghost" id="quizBackBtn">&larr; Back to levels</button>
+      <button class="btn btn-primary" id="quizNextBtn" disabled>Confirm answer</button>
+    </div>
+  </div>
+
+  <div id="resultScreen" style="display:none;">
+    <div class="quiz-result card" style="max-width:520px;margin:0 auto;">
+      <p class="eyebrow" style="justify-content:center;" id="resultLevel"></p>
+      <div class="score-big" id="resultScore"></div>
+      <p id="resultText"></p>
+      <div class="flex gap-8" style="justify-content:center;margin-top:10px;">
+        <button class="btn btn-ghost" id="retakeBtn">Retake</button>
+        <a href="dashboard.html" class="btn btn-primary">View dashboard</a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="footer-mount"></div>
+
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/quiz.js"></script>
+<script>
+  renderNav("assessment");
+  const session = getSession();
+
+  const levelScreen = document.getElementById("levelSelectScreen");
+  const quizScreen = document.getElementById("quizScreen");
+  const resultScreen = document.getElementById("resultScreen");
+
+  function showScreen(name) {
+    levelScreen.style.display = name === "level" ? "block" : "none";
+    quizScreen.style.display = name === "quiz" ? "block" : "none";
+    resultScreen.style.display = name === "result" ? "block" : "none";
+  }
+
+  document.querySelectorAll(".startQuizBtn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      QuizEngine.start(btn.dataset.level);
+      showScreen("quiz");
+      renderQuestion();
+    });
+  });
+
+  function renderQuestion() {
+    const q = QuizEngine.current();
+    document.getElementById("quizCount").textContent =
+      `${QuizEngine.level.toUpperCase()} \u00b7 QUESTION ${QuizEngine.index + 1} OF ${QuizEngine.questions.length}`;
+    document.getElementById("quizProgressBar").style.width =
+      `${((QuizEngine.index) / QuizEngine.questions.length) * 100}%`;
+    document.getElementById("quizQuestionText").textContent = q.q;
+
+    const answered = !!QuizEngine.answers[QuizEngine.index];
+    document.getElementById("quizOptions").innerHTML = q.options.map((opt, i) => {
+      let cls = "option";
+      if (QuizEngine.selected === i) cls += " selected";
+      if (answered) {
+        if (i === q.answer) cls += " correct";
+        else if (i === QuizEngine.answers[QuizEngine.index].chosen) cls += " incorrect";
+      }
+      return `<div class="${cls}" data-i="${i}"><span class="option-key">${String.fromCharCode(65+i)}</span><span>${opt}</span></div>`;
+    }).join("");
+
+    if (answered) {
+      document.getElementById("quizOptions").insertAdjacentHTML("beforeend",
+        `<p class="small-muted" style="margin-top:12px;">${q.explain}</p>`);
+    }
+
+    const nextBtn = document.getElementById("quizNextBtn");
+    nextBtn.disabled = QuizEngine.selected === null;
+    nextBtn.textContent = answered ? (QuizEngine.isLast() ? "See results" : "Next question \u2192") : "Confirm answer";
+
+    document.querySelectorAll(".option").forEach(opt => {
+      opt.addEventListener("click", () => {
+        if (answered) return; // locked after confirming
+        QuizEngine.choose(Number(opt.dataset.i));
+        renderQuestion();
+      });
+    });
+  }
+
+  document.getElementById("quizNextBtn").addEventListener("click", () => {
+    const answered = !!QuizEngine.answers[QuizEngine.index];
+    if (!answered) {
+      QuizEngine.confirm();
+      renderQuestion();
+      return;
+    }
+    if (QuizEngine.isLast()) {
+      finishQuiz();
+    } else {
+      QuizEngine.next();
+      renderQuestion();
+    }
+  });
+
+  document.getElementById("quizBackBtn").addEventListener("click", () => showScreen("level"));
+  document.getElementById("retakeBtn").addEventListener("click", () => showScreen("level"));
+
+  function finishQuiz() {
+    const { score, total } = QuizEngine.score();
+    document.getElementById("resultLevel").textContent = QuizEngine.level.toUpperCase() + " ASSESSMENT";
+    document.getElementById("resultScore").textContent = `${score}/${total}`;
+    const pct = Math.round((score/total)*100);
+    document.getElementById("resultText").textContent =
+      pct >= 80 ? "Strong result — you're ready to move to the next level." :
+      pct >= 50 ? "Solid start. Revisit the modules for the questions you missed, then retake." :
+      "Worth another pass through the curriculum before retaking this level.";
+
+    if (session) {
+      const progress = getProgress(session.email);
+      const prev = progress.quizScores[QuizEngine.level];
+      if (!prev || score > prev.score) {
+        progress.quizScores[QuizEngine.level] = { score, total, at: new Date().toISOString() };
+        saveProgress(session.email, progress);
+      }
+      renderNav("assessment");
+    }
+    showScreen("result");
+  }
+</script>
+</body>
+</html>

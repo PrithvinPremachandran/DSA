@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AlgoForge — Data Structures & Algorithms, Built for Interviews</title>
+<meta name="description" content="Go from zero to interview-ready: beginner-to-expert DSA modules, an in-browser code terminal, level-based assessments, and a curated interview question bank.">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="nav-mount"></div>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow">STATUS: CURRICULUM COMPILED &mdash; 12 MODULES READY</div>
+      <h1>Learn Data Structures &amp; Algorithms like you're <span class="accent">building</span> them, not memorizing them.</h1>
+      <p class="hero-sub">Beginner fundamentals, intermediate real-world examples, and expert-level interview patterns &mdash; for every core topic. Finish a module, and you can explain <em>why</em> the code works, not just recite it.</p>
+      <div class="hero-actions">
+        <a href="auth.html?mode=signup" class="btn btn-primary">Start learning free</a>
+        <a href="learn.html" class="btn btn-ghost">Browse the curriculum</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><b>12</b><span>Core DSA modules</span></div>
+        <div class="hero-stat"><b>3</b><span>Levels per module</span></div>
+        <div class="hero-stat"><b>21+</b><span>Interview questions</span></div>
+        <div class="hero-stat"><b>8</b><span>Live coding challenges</span></div>
+      </div>
+    </div>
+
+    <div class="terminal">
+      <div class="terminal-bar">
+        <span class="terminal-dot" style="background:#FF5F57;"></span>
+        <span class="terminal-dot" style="background:#FEBC2E;"></span>
+        <span class="terminal-dot" style="background:#28C840;"></span>
+        <span class="tlabel">algoforge &mdash; init.sh</span>
+      </div>
+      <div class="terminal-body" id="bootTerminal"></div>
+    </div>
+  </div>
+</header>
+
+<section class="section-tight">
+  <div class="wrap">
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;">
+      <div>
+        <h3 style="margin-bottom:4px;">Every module, three depths.</h3>
+        <p class="mb-0 small-muted">Beginner builds intuition &middot; Intermediate applies it to real systems &middot; Expert covers what interviewers actually probe for.</p>
+      </div>
+      <div class="flex gap-8">
+        <span class="level-tag level-beginner">Beginner</span>
+        <span class="level-tag level-intermediate">Intermediate</span>
+        <span class="level-tag level-expert">Expert</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="curriculum">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">01 &mdash; CURRICULUM</div>
+      <h2>The complete track, in build order.</h2>
+      <p>Each module compounds on the last &mdash; arrays before two pointers, recursion before backtracking, heaps before graph shortest-paths. Follow the order, or jump straight to what you need.</p>
+    </div>
+    <div class="grid module-grid" id="moduleGrid"></div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="eyebrow">02 &mdash; HOW IT WORKS</div>
+      <h2>Built so you stop depending on us.</h2>
+    </div>
+    <div class="grid" style="grid-template-columns:repeat(4,1fr);">
+      <div class="card">
+        <div class="pill pill-amber" style="margin-bottom:14px;">Read</div>
+        <h3 style="font-size:1.02rem;">Understand the "why"</h3>
+        <p class="small-muted">Every concept starts with a plain-language analogy before a single line of code.</p>
+      </div>
+      <div class="card">
+        <div class="pill pill-blue" style="margin-bottom:14px;">Apply</div>
+        <h3 style="font-size:1.02rem;">See it in real systems</h3>
+        <p class="small-muted">Intermediate lessons connect each structure to something you've actually used.</p>
+      </div>
+      <div class="card">
+        <div class="pill pill-green" style="margin-bottom:14px;">Code</div>
+        <h3 style="font-size:1.02rem;">Prove it in the terminal</h3>
+        <p class="small-muted">A live in-browser editor runs your code against real test cases instantly.</p>
+      </div>
+      <div class="card">
+        <div class="pill pill-red" style="margin-bottom:14px;">Assess</div>
+        <h3 style="font-size:1.02rem;">Certify the level</h3>
+        <p class="small-muted">Level-gated assessments confirm you can apply it under pressure, not just recall it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-tight">
+  <div class="wrap">
+    <div class="card card-raised" style="display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;">
+      <div style="max-width:560px;">
+        <div class="eyebrow">03 &mdash; INTERVIEW PREP</div>
+        <h2 style="margin-bottom:8px;">A curated bank of the questions that actually get asked.</h2>
+        <p class="mb-0">Frequently-asked problems at large tech companies, tagged by pattern and difficulty, each with an approach explanation before the code &mdash; not just an answer to copy.</p>
+      </div>
+      <a href="interview-prep.html" class="btn btn-primary">Open the question bank</a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap center">
+    <h2 style="font-size:1.8rem;">Ready to stop watching tutorials and start building the muscle?</h2>
+    <p style="max-width:480px;margin:0 auto 24px;">Create a free account, track your progress module by module, and walk into your next interview having actually derived the patterns yourself.</p>
+    <a href="auth.html?mode=signup" class="btn btn-primary">Create your free account</a>
+  </div>
+</section>
+
+<div id="footer-mount"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderNav("home");
+
+  // module grid
+  const grid = document.getElementById("moduleGrid");
+  grid.innerHTML = COURSE_DATA.modules.map(m => `
+    <div class="card module-card" onclick="location.href='learn.html?m=${m.id}'">
+      <div class="module-num">MODULE ${String(m.num).padStart(2,"0")}</div>
+      <h3>${m.title}</h3>
+      <p>${m.tagline}</p>
+      <div class="bigo-runway">
+        ${Array.from({length:6}).map((_,i)=>`<div class="seg ${i < m.runway ? "on" : ""}"></div>`).join("")}
+      </div>
+      <div class="bigo-label"><span>O(1)</span><span>O(n!)</span></div>
+    </div>
+  `).join("");
+
+  // boot terminal animation
+  const bootLines = [
+    { t: "l-prompt", text: "$ npx algoforge init --goal=faang-interview" },
+    { t: "l-comment", text: "resolving curriculum..." },
+    { t: "l-ok", text: "\u2713 arrays-strings" },
+    { t: "l-ok", text: "\u2713 recursion-backtracking" },
+    { t: "l-ok", text: "\u2713 linked-lists" },
+    { t: "l-ok", text: "\u2713 stacks-queues" },
+    { t: "l-ok", text: "\u2713 hash-tables" },
+    { t: "l-ok", text: "\u2713 trees-bsts" },
+    { t: "l-ok", text: "\u2713 heaps-priority-queues" },
+    { t: "l-ok", text: "\u2713 graphs" },
+    { t: "l-ok", text: "\u2713 sorting-searching" },
+    { t: "l-ok", text: "\u2713 dynamic-programming" },
+    { t: "l-amber", text: "12/12 modules loaded" },
+    { t: "l-comment", text: "" },
+    { t: "l-prompt", text: "$ status" },
+    { t: "l-amber", text: "ready. no dependency on external tutorials." }
+  ];
+  const term = document.getElementById("bootTerminal");
+  let li = 0;
+  function typeNextLine() {
+    if (li >= bootLines.length) {
+      term.insertAdjacentHTML("beforeend", `<div><span class="terminal-cursor"></span></div>`);
+      return;
+    }
+    const line = bootLines[li];
+    const div = document.createElement("div");
+    div.className = line.t;
+    div.textContent = line.text || "\u00A0";
+    term.appendChild(div);
+    li++;
+    setTimeout(typeNextLine, 90);
+  }
+  typeNextLine();
+</script>
+</body>
+</html>

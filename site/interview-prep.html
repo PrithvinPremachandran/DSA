@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interview Prep — AlgoForge</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="nav-mount"></div>
+
+<div class="wrap section">
+  <div class="section-head">
+    <div class="eyebrow">QUESTION BANK</div>
+    <h2>Frequently asked at Google &amp; other large tech companies.</h2>
+    <p>Each entry includes the approach reasoning before the code, so you learn to derive the solution rather than memorize it. These are widely-known, commonly-published interview problems &mdash; not leaked or proprietary material.</p>
+  </div>
+
+  <div class="filter-row" id="difficultyFilters"></div>
+  <div class="filter-row" id="categoryFilters"></div>
+
+  <div class="iq-list" id="iqList"></div>
+</div>
+
+<div id="footer-mount"></div>
+
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderNav("interview");
+
+  let activeDifficulty = "All";
+  let activeCategory = "All";
+
+  const difficulties = ["All", "Easy", "Medium", "Hard"];
+  const categories = ["All", ...new Set(INTERVIEW_QUESTIONS.map(q => q.category))];
+
+  function renderFilters() {
+    document.getElementById("difficultyFilters").innerHTML = difficulties.map(d =>
+      `<div class="filter-chip ${d === activeDifficulty ? "active" : ""}" data-type="diff" data-val="${d}">${d}</div>`
+    ).join("");
+    document.getElementById("categoryFilters").innerHTML = categories.map(c =>
+      `<div class="filter-chip ${c === activeCategory ? "active" : ""}" data-type="cat" data-val="${c}">${c}</div>`
+    ).join("");
+    document.querySelectorAll(".filter-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        if (chip.dataset.type === "diff") activeDifficulty = chip.dataset.val;
+        else activeCategory = chip.dataset.val;
+        renderFilters();
+        renderList();
+      });
+    });
+  }
+
+  function renderList() {
+    const filtered = INTERVIEW_QUESTIONS.filter(q =>
+      (activeDifficulty === "All" || q.difficulty === activeDifficulty) &&
+      (activeCategory === "All" || q.category === activeCategory)
+    );
+    document.getElementById("iqList").innerHTML = filtered.map((q, i) => `
+      <div class="iq-item" id="iq-${i}">
+        <div class="iq-head" onclick="toggleIq(${i})">
+          <div class="iq-title">
+            <span class="level-tag level-${q.difficulty === 'Easy' ? 'beginner' : q.difficulty === 'Medium' ? 'intermediate' : 'expert'}">${q.difficulty}</span>
+            <b>${q.title}</b>
+            <span class="pill">${q.category}</span>
+          </div>
+          <span class="iq-chevron">&#9660;</span>
+        </div>
+        <div class="iq-body">
+          <p>${q.prompt}</p>
+          <p><b style="color:var(--text);">Approach:</b> ${q.approach}</p>
+          <p class="iq-companies">Frequently asked by: ${q.companies.join(" \u00b7 ")}</p>
+          <pre class="code-block">${escapeHtml(q.code)}</pre>
+          <p class="small-muted mb-0">Complexity: ${q.complexity}</p>
+        </div>
+      </div>
+    `).join("") || `<p class="small-muted">No questions match these filters.</p>`;
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+  }
+
+  function toggleIq(i) {
+    document.getElementById("iq-" + i).classList.toggle("open");
+  }
+  window.toggleIq = toggleIq;
+
+  renderFilters();
+  renderList();
+</script>
+</body>
+</html>

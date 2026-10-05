@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign in — AlgoForge</title>
+<link rel="stylesheet" href="css/style.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+<div id="nav-mount"></div>
+
+<div class="auth-wrap">
+  <div class="auth-card card">
+    <div class="auth-tabs">
+      <div class="auth-tab" data-tab="login">Log in</div>
+      <div class="auth-tab" data-tab="signup">Sign up</div>
+    </div>
+
+    <div id="formMsg" class="form-msg"></div>
+
+    <!-- LOGIN -->
+    <form id="loginForm" style="display:none;">
+      <div class="field">
+        <label for="loginEmail">Email</label>
+        <input type="email" id="loginEmail" required placeholder="you@example.com">
+      </div>
+      <div class="field">
+        <label for="loginPassword">Password</label>
+        <input type="password" id="loginPassword" required placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;">
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Log in</button>
+    </form>
+
+    <!-- SIGNUP -->
+    <form id="signupForm" style="display:none;">
+      <div class="field">
+        <label for="signupName">Full name</label>
+        <input type="text" id="signupName" required placeholder="Priya Sharma">
+      </div>
+      <div class="field">
+        <label for="signupEmail">Email</label>
+        <input type="email" id="signupEmail" required placeholder="you@example.com">
+      </div>
+      <div class="field">
+        <label for="signupPassword">Password</label>
+        <input type="password" id="signupPassword" required minlength="6" placeholder="At least 6 characters">
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Create free account</button>
+    </form>
+
+    <div class="divider">or continue with</div>
+
+    <div id="googleBtnMount" style="display:flex;justify-content:center;"></div>
+    <button id="googleFallbackBtn" class="btn btn-google btn-block" style="display:none;">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.84 2.09-1.8 2.73v2.27h2.92c1.7-1.57 2.68-3.88 2.68-6.64z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.27c-.8.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.98v2.34C2.46 15.98 5.48 18 9 18z"/><path fill="#FBBC05" d="M3.97 10.71c-.18-.54-.28-1.11-.28-1.71s.1-1.17.28-1.71V4.95H.98A8.996 8.996 0 000 9c0 1.45.35 2.83.98 4.05l2.99-2.34z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.59-2.59C13.46.89 11.43 0 9 0 5.48 0 2.46 2.02.98 4.95l2.99 2.34C4.68 5.16 6.66 3.58 9 3.58z"/></svg>
+      Sign in with Google (demo mode)
+    </button>
+    <p class="auth-note" id="googleNote">Google Sign-In needs one setup step from whoever hosts this site &mdash; see README.md. Until then, this button creates a demo Google-style session.</p>
+
+    <p class="auth-note">By continuing you agree this is a learning platform demo. Account status notifications for this site are addressed to <span class="mono">prithwinanonymous@gmail.com</span>.</p>
+  </div>
+</div>
+
+<div id="footer-mount"></div>
+
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  renderNav(null);
+
+  const existing = getSession();
+  if (existing) location.href = "dashboard.html";
+
+  const tabs = $all(".auth-tab");
+  const loginForm = $("#loginForm");
+  const signupForm = $("#signupForm");
+  const msg = $("#formMsg");
+
+  function setTab(tab) {
+    tabs.forEach(t => t.classList.toggle("active", t.dataset.tab === tab));
+    loginForm.style.display = tab === "login" ? "block" : "none";
+    signupForm.style.display = tab === "signup" ? "block" : "none";
+    msg.classList.remove("show");
+  }
+  tabs.forEach(t => t.addEventListener("click", () => setTab(t.dataset.tab)));
+
+  const params = new URLSearchParams(location.search);
+  setTab(params.get("mode") === "signup" ? "signup" : "login");
+
+  function showMsg(text, type) {
+    msg.textContent = text;
+    msg.className = "form-msg show " + type;
+  }
+
+  function afterAuthSuccess() {
+    const next = params.get("next");
+    showToast("Welcome to AlgoForge!");
+    setTimeout(() => location.href = next && next !== "auth.html" ? next : "dashboard.html", 500);
+  }
+
+  loginForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const res = doLogin({
+      email: $("#loginEmail").value,
+      password: $("#loginPassword").value
+    });
+    if (res.ok) { showMsg("Logged in!", "ok"); afterAuthSuccess(); }
+    else showMsg(res.error, "error");
+  });
+
+  signupForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const res = doSignup({
+      name: $("#signupName").value,
+      email: $("#signupEmail").value,
+      password: $("#signupPassword").value
+    });
+    if (res.ok) { showMsg("Account created!", "ok"); afterAuthSuccess(); }
+    else showMsg(res.error, "error");
+  });
+
+  // Google Sign-In
+  window.addEventListener("load", () => {
+    initGoogleSignIn((profile) => {
+      doGoogleSignIn(profile);
+      showMsg("Signed in with Google!", "ok");
+      afterAuthSuccess();
+    });
+  });
+
+  $("#googleFallbackBtn").addEventListener("click", () => {
+    const demoEmail = prompt("Demo mode -- enter an email to simulate Google Sign-In:", "you@gmail.com");
+    if (!demoEmail) return;
+    const demoName = demoEmail.split("@")[0].replace(/[._]/g, " ");
+    doGoogleSignIn({ email: demoEmail, name: demoName.charAt(0).toUpperCase() + demoName.slice(1) });
+    showMsg("Signed in with Google (demo mode)!", "ok");
+    afterAuthSuccess();
+  });
+</script>
+</body>
+</html>

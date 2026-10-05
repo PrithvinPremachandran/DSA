@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — AlgoForge</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="nav-mount"></div>
+
+<div class="wrap section-tight">
+  <div class="section-head" style="margin-bottom:26px;">
+    <div class="eyebrow" id="greetEyebrow">DASHBOARD</div>
+    <h2 id="greetName">Welcome back</h2>
+  </div>
+
+  <div class="dash-top">
+    <div class="card">
+      <h3 style="font-size:1rem;margin-bottom:20px;">Overall completion</h3>
+      <div class="gauge-wrap">
+        <div class="gauge">
+          <svg width="132" height="132" viewBox="0 0 132 132">
+            <circle class="gauge-track" cx="66" cy="66" r="56" fill="none" stroke-width="12"></circle>
+            <circle id="gaugeFill" class="gauge-fill" cx="66" cy="66" r="56" fill="none" stroke-width="12"
+              stroke-dasharray="351.86" stroke-dashoffset="351.86"></circle>
+          </svg>
+          <div class="gauge-num"><b id="gaugePct">0%</b><span>COMPLETE</span></div>
+        </div>
+        <div style="flex:1;">
+          <p class="mb-0 small-muted">You've completed <b id="tiersDoneText">0 of 30</b> lesson tiers across 12 modules. Finish all three tiers of a module to fully master it.</p>
+        </div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-chip"><b id="statModulesStarted">0</b><span>MODULES STARTED</span></div>
+        <div class="stat-chip"><b id="statProblemsSolved">0</b><span>PROBLEMS SOLVED</span></div>
+        <div class="stat-chip"><b id="statQuizBest">&mdash;</b><span>BEST ASSESSMENT</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="font-size:1rem;margin-bottom:16px;">Level assessments</h3>
+      <div id="quizBadges" style="display:flex;flex-direction:column;gap:12px;"></div>
+      <a href="assessment.html" class="btn btn-ghost btn-block" style="margin-top:6px;">Take an assessment</a>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:22px;">
+    <div class="flex-between" style="margin-bottom:18px;">
+      <h3 style="font-size:1rem;margin-bottom:0;">Module progress</h3>
+      <a href="learn.html" class="small-muted">View curriculum &rarr;</a>
+    </div>
+    <div class="track-list" id="trackList"></div>
+  </div>
+
+  <div class="card">
+    <div class="flex-between" style="margin-bottom:10px;">
+      <h3 style="font-size:1rem;margin-bottom:0;">Account activity log</h3>
+      <span class="pill">local to this browser</span>
+    </div>
+    <p class="small-muted">This site has no live backend, so signups/logins can't be emailed automatically without extra setup (see README.md). Every account event is still recorded here, addressed to <span class="mono">prithwinanonymous@gmail.com</span>, exactly as it would appear in a notification.</p>
+    <div id="activityLog" style="margin-top:10px;"></div>
+  </div>
+</div>
+
+<div id="footer-mount"></div>
+
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  const session = requireAuth();
+  if (session) {
+    renderNav(null);
+    const progress = getProgress(session.email);
+    const pct = computeCoursePercent(progress);
+
+    document.getElementById("greetName").textContent = "Welcome back, " + session.name.split(" ")[0];
+
+    const circumference = 2 * Math.PI * 56;
+    const fill = document.getElementById("gaugeFill");
+    fill.setAttribute("stroke-dasharray", circumference.toFixed(2));
+    fill.setAttribute("stroke-dashoffset", (circumference * (1 - pct / 100)).toFixed(2));
+    document.getElementById("gaugePct").textContent = pct + "%";
+
+    const totalTiers = COURSE_DATA.modules.length * 3;
+    let tiersDone = 0, modulesStarted = 0;
+    COURSE_DATA.modules.forEach(m => {
+      const rec = progress.lessons[m.id];
+      if (rec) {
+        if (rec.beginner) tiersDone++;
+        if (rec.intermediate) tiersDone++;
+        if (rec.expert) tiersDone++;
+        if (rec.beginner || rec.intermediate || rec.expert) modulesStarted++;
+      }
+    });
+    document.getElementById("tiersDoneText").textContent = `${tiersDone} of ${totalTiers}`;
+    document.getElementById("statModulesStarted").textContent = modulesStarted;
+    document.getElementById("statProblemsSolved").textContent = progress.solvedProblems.length;
+
+    const scores = Object.entries(progress.quizScores);
+    if (scores.length) {
+      const best = scores.reduce((a, b) => (b[1].score / b[1].total > a[1].score / a[1].total ? b : a));
+      document.getElementById("statQuizBest").textContent = `${best[1].score}/${best[1].total}`;
+    }
+
+    // quiz badges
+    const levels = ["beginner", "intermediate", "expert"];
+    document.getElementById("quizBadges").innerHTML = levels.map(lv => {
+      const s = progress.quizScores[lv];
+      const label = lv[0].toUpperCase() + lv.slice(1);
+      if (s) {
+        return `<div class="flex-between"><span class="level-tag level-${lv}">${label}</span><span class="mono small-muted">${s.score}/${s.total}</span></div>`;
+      }
+      return `<div class="flex-between"><span class="level-tag level-${lv}">${label}</span><span class="small-muted">Not attempted</span></div>`;
+    }).join("");
+
+    // module track list
+    document.getElementById("trackList").innerHTML = COURSE_DATA.modules.map(m => {
+      const mp = computeModulePercent(progress, m.id);
+      return `
+        <div class="track-row" style="cursor:pointer;" onclick="location.href='learn.html?m=${m.id}'">
+          <div class="tr-icon">${String(m.num).padStart(2,"0")}</div>
+          <div class="tr-body">
+            <b>${m.title}</b>
+            <div class="tr-bar"><span style="width:${mp}%;"></span></div>
+          </div>
+          <div class="tr-pct">${mp}%</div>
+        </div>`;
+    }).join("");
+
+    // activity log
+    let log = [];
+    try { log = JSON.parse(localStorage.getItem("algoforge_activity_log")) || []; } catch {}
+    const mine = log.filter(l => l.email === session.email).slice(0, 8);
+    document.getElementById("activityLog").innerHTML = mine.length
+      ? mine.map(l => `
+        <div class="track-row" style="cursor:default;">
+          <div class="tr-icon">${l.type === "signup" ? "\u2600" : "\u2192"}</div>
+          <div class="tr-body">
+            <b>${l.type === "signup" ? "Account created" : "Logged in"} &middot; ${l.provider}</b>
+            <div class="small-muted" style="margin-top:2px;">${l.email} &rarr; notify: ${l.notifyTo || "prithwinanonymous@gmail.com"}</div>
+          </div>
+          <div class="tr-pct">${new Date(l.at).toLocaleString()}</div>
+        </div>`).join("")
+      : `<p class="small-muted mb-0">No activity recorded yet.</p>`;
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Code Terminal — AlgoForge</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="nav-mount"></div>
+
+<div class="practice-layout">
+  <aside class="problem-panel">
+    <div class="problem-select">
+      <label class="small-muted" for="problemPicker" style="display:block;margin-bottom:8px;">PROBLEM</label>
+      <select id="problemPicker" class="mono" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:10px;"></select>
+    </div>
+    <div class="problem-desc">
+      <h2 id="probTitle"></h2>
+      <div class="problem-tags" id="probTags"></div>
+      <p id="probDesc"></p>
+      <div id="probExamples"></div>
+    </div>
+  </aside>
+
+  <section class="editor-panel">
+    <div class="editor-toolbar">
+      <div class="et-left">
+        <span class="pill">JavaScript</span>
+        <span class="small-muted" id="funcSigHint"></span>
+      </div>
+      <div class="flex gap-8">
+        <button class="btn btn-ghost btn-sm" id="resetBtn">Reset</button>
+        <button class="btn btn-primary btn-sm" id="runBtn">Run tests &#9654;</button>
+      </div>
+    </div>
+    <textarea id="codeInput" spellcheck="false"></textarea>
+    <div class="console-panel">
+      <div class="console-head">
+        <span>Console</span>
+        <span id="consoleSummary" class="mono small-muted"></span>
+      </div>
+      <div id="consoleOutput"><p class="console-empty">Run your code to see test results here.</p></div>
+    </div>
+  </section>
+</div>
+
+<div id="footer-mount"></div>
+
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/editor.js"></script>
+<script>
+  renderNav("practice");
+  const session = getSession();
+
+  const picker = document.getElementById("problemPicker");
+  picker.innerHTML = PRACTICE_PROBLEMS.map(p => `<option value="${p.id}">${p.title} &middot; ${p.difficulty}</option>`).join("");
+
+  const params = new URLSearchParams(location.search);
+  let currentProblem = PRACTICE_PROBLEMS.find(p => p.id === params.get("p")) || PRACTICE_PROBLEMS[0];
+  picker.value = currentProblem.id;
+
+  function loadProblem(id, keepCode) {
+    currentProblem = PRACTICE_PROBLEMS.find(p => p.id === id);
+    document.getElementById("probTitle").textContent = currentProblem.title;
+    document.getElementById("probTags").innerHTML =
+      `<span class="level-tag level-${currentProblem.difficulty.toLowerCase()}">${currentProblem.difficulty}</span>` +
+      currentProblem.tags.map(t => `<span class="pill">${t}</span>`).join("");
+    document.getElementById("probDesc").innerHTML = currentProblem.desc;
+    document.getElementById("probExamples").innerHTML = currentProblem.examples.map(ex => `
+      <div class="example-block">
+        <div class="ex-label">Example</div>
+        <div class="mono">Input: ${ex.input}</div>
+        <div class="mono">Output: ${ex.output}</div>
+      </div>`).join("");
+    document.getElementById("funcSigHint").textContent = `function ${currentProblem.functionName}(...)`;
+    if (!keepCode) {
+      document.getElementById("codeInput").value = currentProblem.starter;
+    }
+    document.getElementById("consoleOutput").innerHTML = `<p class="console-empty">Run your code to see test results here.</p>`;
+    document.getElementById("consoleSummary").textContent = "";
+    history.replaceState(null, "", "practice.html?p=" + id);
+  }
+  loadProblem(currentProblem.id, false);
+
+  picker.addEventListener("change", () => loadProblem(picker.value, false));
+  document.getElementById("resetBtn").addEventListener("click", () => loadProblem(currentProblem.id, false));
+
+  document.getElementById("runBtn").addEventListener("click", () => {
+    const code = document.getElementById("codeInput").value;
+    const runBtn = document.getElementById("runBtn");
+    const consoleOut = document.getElementById("consoleOutput");
+    const summary = document.getElementById("consoleSummary");
+
+    const syntax = checkSyntax(code);
+    if (!syntax.ok) {
+      consoleOut.innerHTML = `<div class="test-row"><span class="test-status fail">&times;</span><span style="color:var(--red);">Syntax error: ${syntax.error}</span></div>`;
+      summary.textContent = "syntax error";
+      return;
+    }
+
+    runBtn.disabled = true;
+    runBtn.textContent = "Running…";
+    consoleOut.innerHTML = `<p class="console-empty">Executing in sandbox…</p>`;
+
+    runInSandbox(code, currentProblem.functionName, currentProblem.tests, (result) => {
+      runBtn.disabled = false;
+      runBtn.textContent = "Run tests \u25B6";
+
+      if (!result.ok) {
+        consoleOut.innerHTML = `<div class="test-row"><span class="test-status fail">&times;</span><span style="color:var(--red);">${result.fatalError}</span></div>`;
+        summary.textContent = "error";
+        return;
+      }
+
+      const passCount = result.results.filter(r => r.pass).length;
+      const total = result.results.length;
+      summary.textContent = `${passCount}/${total} passed`;
+
+      let html = result.results.map((r, i) => {
+        if (r.pass) {
+          return `<div class="test-row"><span class="test-status pass">\u2713</span><span>Test ${i + 1} passed</span></div>`;
+        }
+        const detail = r.error
+          ? `threw: ${r.error}`
+          : `expected ${JSON.stringify(r.expected)}, got ${JSON.stringify(r.actual)}`;
+        return `<div class="test-row"><span class="test-status fail">&times;</span><span>Test ${i + 1} failed &mdash; ${detail}</span></div>`;
+      }).join("");
+
+      if (result.logs && result.logs.length) {
+        html += `<div class="console-log" style="margin-top:10px;">${result.logs.join("\\n")}</div>`;
+      }
+      consoleOut.innerHTML = html;
+
+      if (passCount === total && session) {
+        const progress = getProgress(session.email);
+        if (!progress.solvedProblems.includes(currentProblem.id)) {
+          progress.solvedProblems.push(currentProblem.id);
+          saveProgress(session.email, progress);
+          showToast("All tests passed — problem marked solved!");
+          renderNav("practice");
+        }
+      } else if (passCount === total && !session) {
+        showToast("All tests passed! Log in to save this to your progress.");
+      }
+    });
+  });
+</script>
+</body>
+</html>

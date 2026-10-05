@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Curriculum — AlgoForge</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="nav-mount"></div>
+
+<div class="learn-layout">
+  <aside class="learn-sidebar">
+    <div class="sidebar-title">12 Modules</div>
+    <div id="sidebarList"></div>
+  </aside>
+
+  <main class="learn-main">
+    <div class="module-header">
+      <div class="eyebrow" id="moduleEyebrow">MODULE</div>
+      <h1 id="moduleTitle">Loading…</h1>
+      <p id="moduleTagline"></p>
+    </div>
+
+    <div class="tier-tabs">
+      <div class="tier-tab" data-tier="beginner">Beginner</div>
+      <div class="tier-tab" data-tier="intermediate">Intermediate</div>
+      <div class="tier-tab" data-tier="expert">Expert</div>
+    </div>
+
+    <div class="tier-panel" data-tier="beginner"></div>
+    <div class="tier-panel" data-tier="intermediate"></div>
+    <div class="tier-panel" data-tier="expert"></div>
+
+    <div>
+      <h3 style="margin-top:36px;font-size:1.05rem;">Practice problems for this module</h3>
+      <div id="modProblems"></div>
+    </div>
+
+    <div class="lesson-footer">
+      <button class="btn btn-ghost" id="markDoneBtn">Mark this level complete</button>
+      <div class="flex gap-8">
+        <button class="btn btn-ghost btn-sm" id="prevModBtn">&larr; Previous module</button>
+        <button class="btn btn-primary btn-sm" id="nextModBtn">Next module &rarr;</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="footer-mount"></div>
+
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  renderNav("learn");
+  const session = getSession();
+
+  const params = new URLSearchParams(location.search);
+  let currentModId = params.get("m") || COURSE_DATA.modules[0].id;
+  let currentTier = "beginner";
+
+  function getProgressSafe() {
+    return session ? getProgress(session.email) : { lessons: {}, quizScores: {}, solvedProblems: [] };
+  }
+
+  function renderSidebar() {
+    const progress = getProgressSafe();
+    document.getElementById("sidebarList").innerHTML = COURSE_DATA.modules.map(m => {
+      const pct = computeModulePercent(progress, m.id);
+      const done = pct === 100;
+      return `
+        <div class="sidebar-item ${m.id === currentModId ? "active" : ""} ${done ? "done" : ""}" onclick="selectModule('${m.id}')">
+          <span class="sidebar-check">${done ? "\u2713" : ""}</span>
+          <span>${String(m.num).padStart(2,"0")}. ${m.title}</span>
+        </div>`;
+    }).join("");
+  }
+
+  function selectModule(id) {
+    currentModId = id;
+    currentTier = "beginner";
+    history.replaceState(null, "", "learn.html?m=" + id);
+    renderModule();
+  }
+  window.selectModule = selectModule;
+
+  function renderModule() {
+    const mod = COURSE_DATA.modules.find(m => m.id === currentModId) || COURSE_DATA.modules[0];
+    document.getElementById("moduleEyebrow").textContent = `MODULE ${String(mod.num).padStart(2,"0")} / ${COURSE_DATA.modules.length}`;
+    document.getElementById("moduleTitle").textContent = mod.title;
+    document.getElementById("moduleTagline").innerHTML = mod.tagline;
+
+    document.querySelectorAll(".tier-panel").forEach(panel => {
+      panel.innerHTML = mod.tiers[panel.dataset.tier];
+    });
+
+    document.getElementById("modProblems").innerHTML = mod.problems.map(p => `
+      <div class="problem-mini">
+        <b>${p.title}</b>
+        <span class="level-tag level-${p.difficulty.toLowerCase()}">${p.difficulty}</span>
+      </div>`).join("");
+
+    setTier(currentTier);
+    renderSidebar();
+    updateMarkDoneBtn();
+  }
+
+  function setTier(tier) {
+    currentTier = tier;
+    document.querySelectorAll(".tier-tab").forEach(t => t.classList.toggle("active", t.dataset.tier === tier));
+    document.querySelectorAll(".tier-panel").forEach(p => p.classList.toggle("active", p.dataset.tier === tier));
+    updateMarkDoneBtn();
+  }
+
+  document.querySelectorAll(".tier-tab").forEach(tab => {
+    tab.addEventListener("click", () => setTier(tab.dataset.tier));
+  });
+
+  function updateMarkDoneBtn() {
+    const btn = document.getElementById("markDoneBtn");
+    if (!session) {
+      btn.textContent = "Log in to track progress";
+      btn.onclick = () => location.href = "auth.html";
+      return;
+    }
+    const progress = getProgress(session.email);
+    const done = isLessonComplete(progress, currentModId, currentTier);
+    btn.textContent = done ? `\u2713 ${currentTier[0].toUpperCase()+currentTier.slice(1)} tier complete` : `Mark ${currentTier} tier complete`;
+    btn.onclick = () => {
+      markLessonComplete(session.email, currentModId, currentTier);
+      showToast("Progress saved.");
+      renderNav("learn");
+      renderSidebar();
+      updateMarkDoneBtn();
+    };
+  }
+
+  document.getElementById("prevModBtn").addEventListener("click", () => {
+    const idx = COURSE_DATA.modules.findIndex(m => m.id === currentModId);
+    if (idx > 0) selectModule(COURSE_DATA.modules[idx - 1].id);
+  });
+  document.getElementById("nextModBtn").addEventListener("click", () => {
+    const idx = COURSE_DATA.modules.findIndex(m => m.id === currentModId);
+    if (idx < COURSE_DATA.modules.length - 1) selectModule(COURSE_DATA.modules[idx + 1].id);
+  });
+
+  renderModule();
+</script>
+</body>
+</html>
